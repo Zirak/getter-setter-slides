@@ -1,0 +1,503 @@
+<!doctype html>
+<html>
+  <head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+	<title>reveal.js</title>
+
+	<link rel="stylesheet" href="dist/reset.css">
+	<link rel="stylesheet" href="dist/reveal.css">
+	<link rel="stylesheet" href="dist/theme/simple.css" id="theme">
+
+	<link rel="stylesheet" href="plugin/highlight/docco.css" id="highlight-theme">
+  </head>
+  <body>
+	<div class="reveal">
+	  <div class="slides">
+        <section data-markdown>
+          <script type="text/template">
+          ## Overview
+          1. Functions are special values
+          1. [x] Getter / Setter are functions with specific signatures
+          1. [x] Setter-setters (callbacks)
+              1. [x] Nodebacks
+              1. [ ] Convention vs. language features (`cb(err)` vs. `throw err` etc.)
+          1. [x] Promises (setter-setters with signature)
+              1. [?] Illustrate values flow from setter->getter
+              1. [x] Alternative: Task (lazy, cancellable, unicast)
+          1. [ ] Getter-getters (brief overview)
+          1. Iterators (getter-getters with contract)
+              1. Contract in js
+              2. Generators
+              3. 2c coroutine implementation in js
+          1. Async iterable (iterator with async `next`)
+          1. Stream
+          1. Observable
+          </script>
+        </section>
+        <section>
+          <section>
+            <h2>Getter</h2>
+            <p>getter <em>(n.)</em> &mdash; A function which returns a value</p>
+            <code>() => T</code>
+            <h2>Setter</h2>
+            <p>setter <em>(n.)</em> &mdash; A function which receives a value</p>
+            <code>T => ()</code>
+          </section>
+          <section>
+            <h2>Getter / Setter</h2>
+            <ul>
+              <li>Why have functions at all?
+              <li>Why can't we just put values in variables?
+              <li>Why can't we just use assignments everywhere?
+              <li class="fragment">When the value is <em>somewhere else</em>
+          </section>
+          <section data-markdown>
+            <script type="text/template">
+              ## Getter examples
+
+              - `document.body`
+              - `document`
+              - `require(...)`
+              - `Date.now(...)`
+              - User input
+              - Network, fs, ROM, ...
+            </script>
+          </section>
+          <section data-markdown>
+            <script type="text/template">
+              ## Setter examples
+
+              - Changing the world!
+              - `console.log`
+              - `readFile`, `socket.write`, ...
+            </script>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Callback pattern</h2>
+            <p>Setter-of-setter</p>
+          </section>
+
+          <section data-markdown>
+            <script type="text/template">
+            - Let's look at your average callback:
+            ```javascript
+              function readConfig(cb) {
+                magicallyReadConfig(configPath, (config) => {
+                  config.apiPort ||= 4444; // Coming soon! 
+                  cb(config);
+                });
+              }
+            ```
+            ```
+              readConfig(cb: Config => ()) => ()
+            ```
+
+            - <!-- .element: class="fragment" --> <code>cb</code> is a setter: A function which receives a value
+            - <!-- .element: class="fragment" --> <code>readConfig</code> is a setter: A function which receives a value
+            - <!-- .element: class="fragment" --> ...but a setter of <em>setters</em>: A setter which receives another setter
+          </script>
+          </section>
+          <section data-markdown>
+            <script type="text/template">
+            ## nodebacks
+            - A setter-of-setters with a social contract
+            - With the contract our example more like:
+
+            ```javascript
+            function readConfig(cb) {
+              magicallyReadConfig(configPath, (err, config) => {
+                if (err) {
+                  cb(err);
+                } else {
+                  config.apiPort ||= 4444;
+                  cb(config);
+                }
+              });
+            }
+            ```
+          </script>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Promise</h2>
+            <p>Setter-of-setters with a contract</p>
+          </section>
+          <section data-markdown>
+            <script type="text/template">
+            ## Promises of a Promise
+            - An explicit contract
+            - Either resolved/rejected, never both
+            - Never more than once
+            - Always async
+            ```javascript
+            console.log('before then');
+            something.then((x) => {
+                console.log('inside', x);
+            });
+            console.log('after then');
+            ```
+            </script>
+          </section>
+          <section data-markdown="">
+            <script type="text/template">
+              ## Resolver
+              - The function passed to `Promise` constructor
+              ```javascript
+              const p = new Promise(resolver);
+              function resolver(resolve, reject) {
+                  // ...
+              }
+              ```
+
+              - Signature:
+              ```
+              resolver(resolve: T => (), reject: S => ()) => ()
+              ```
+              - <!-- .element: class="fragment" --> The resolver is a <em>setter</em> of <em>two setters</em>
+            </script>
+          </section>
+          <section>
+            <h2>Promise</h2>
+            <p>Contract around a setter of two setters</p>
+            <code data-trim>
+                (T => (), S => ()) => ()
+            </code>
+          </section>
+
+          <section data-markdown>
+          <script type="text/template">
+            ### Aside: (Somewhat) Aggressively Async
+
+            <pre><code class="javascript" data-trim data-line-numbers="1-15|1-7,9,11,15|9|12-14|13">
+            console.log('before constructor');
+            const p = new Promise((resolve) => {
+              console.log('before resolve');
+              resolve(4);
+              console.log('after resolve');
+            });
+            console.log('after constructor');
+            
+            p.then(console.log);
+
+            setTimeout(() => {
+              console.log('before then');
+              p.then(() => console.log('inside then'));
+              console.log('after then');
+            }, 10);
+            </code></pre>
+          </script>
+          </section>
+
+          <section data-markdown>
+          <script type="text/template">
+            ## Aside: Other data structures
+            - Promises are not the only setter-of-setters
+            - Other data structures exist
+            - Promises model a _value_, not an _action_
+          </script>
+          </section>
+          <section data-markdown>
+          <script type="text/template">
+            ## [Tasks](http://kriskowal.github.io/gtor/docs/task)
+            - Tasks model actions
+              - Cancellable
+              - Unicast
+              - _Lazy_
+
+            ```js
+            const t = new Task((resolve, reject) => {
+              console.log('inside resolver');
+              resolve(4);
+            });
+
+            setTimeout(() => {
+              t.then(console.log);
+            }, 4000);
+            ```
+          </script>
+          </section>
+        </section>
+
+        <section>
+          <section data-markdown>
+          <script type="text/template">
+            ## Setter-of-setter properties
+            (so far!)
+            * Lazy / Eager
+            * Sync / Async
+            * Unicast / Multicast
+            * ...both for consumer and producer
+          </script>
+          </section>
+        </section>
+
+        <section>
+          <section data-markdown>
+          <script type="text/template">
+            ## Getter-of-getters
+          </script>
+          </section>
+
+          <section>
+            - No catchy name like callbacks
+            - Used when encapsulating local state
+          </section>
+
+          <section>
+            <div class="r-stack">
+              <pre class="fade-out"><code class="javascript" data-trim>
+              // Never use this function
+              function prng() {
+                let seed = 0xdeadcafe;
+                return () => {
+                  seed *= 1700;
+                  seed %= 0x7fff;
+                  return seed;
+                };
+              }
+
+              const rand = prng();
+              rand(); // 2563
+              rand(); // 31856
+              </code></pre>
+
+              <pre class="fragment"><code class="javascript" data-trim>
+                // Never use this function
+                function prng() {
+                  let seed = 0xdeadcafe;
+                  return {
+                    next() {
+                      seed *= 1700;
+                      seed %= 0x7fff;
+                      return seed;
+                    },
+                  };
+                }
+  
+                const rand = prng();
+                rand.next(); // 2563
+                rand.next(); // 31856
+              </code></pre>
+            </div>
+          </script>
+          </section>
+
+          <section data-markdown>
+          <script type="text/template">
+            ## Iterators
+
+            Getter-of-getters with a contract
+
+            ```
+            iterator() => {
+              next() => { value: T, done: boolean }
+            }
+            ```
+          </script>
+          </section>
+
+          <section>
+            <pre class="fragment"><code class="javascript" data-trim>
+              // Never use this function
+              function prng() {
+                let seed = 0xdeadcafe;
+                return {
+                  next() {
+                    seed *= 1700;
+                    seed %= 0x7fff;
+                    return {
+                      value: seed,
+                      done: false,
+                    };
+                  },
+                };
+              }
+
+              const rand = prng();
+              rand.next(); // { value: 2563, done: false }
+              rand.next(); // { value: 31856, done: false }
+            </code></pre>
+          </section>
+
+          <section data-markdown>
+            <script type="text/template">
+              ## Generators
+
+              Syntax sugar for creating iterators
+
+              ```javascript
+              function* prng() {
+                let seed = 0xdeadcafe;
+                while (true) {
+                  seed *= 1700;
+                  seed %= 0x7fff;
+                  yield seed;
+                }
+              }
+
+              const rand = prng();
+              rand.next(); // { value: 2563, done: false }
+              rand.next(); // { value: 31856, done: false }
+              ```
+            </script>
+            </section>
+
+          <section>
+            <h2>Iterable</h2>
+            <p>An object with a <code>Symbol.iterator</code> key, a function which returns an iterator</p>
+          </section>
+
+          <section data-markdown>
+          <script type="text/template">
+            ## Aside: Coroutines
+
+            - You can send values back _into_ an iterator
+            - Models a [coroutine]((http://www.dabeaz.com/coroutines/Coroutines.pdf)) / state machine
+
+            ```javascript
+            function* foo() {
+              const x = yield;
+              return x * 2;
+            }
+
+            const g = foo();
+            g.next(); // { value: undefined, done: false }
+            g.next(2); // { value: 4, done: true }
+            ```
+          </script>
+          </section>
+
+          <section data-markdown>
+            <script type="text/template">
+              ## Aside: throw / return
+  
+              - `gen.throw()` causes an exception
+              - `gen.return()` forces an early return
+            </script>
+            </section>
+
+          <section>
+            <h3>Aside: Implementing coroutines</h3>
+
+            <ul>
+              <li>Coroutines model a state machine
+              <li>Progress it in <code>next</code> calls
+            </ul>
+
+            <pre><code class="javascript" data-trim>
+            function* fYield() {
+              const x = yield;
+              const y = yield x * 2;
+              return y;
+            }
+
+            const fState = {
+              [Symbol.iterator]() {
+                let step = 0;
+                let vars = {};
+                return {
+                  next(...args) {
+                    switch (step) {
+                      case 0:
+                        step += 1;
+                        return { value: undefined, done: false };
+                      case 1:
+                        step += 1;
+                        vars.x = args[0];
+                        return { value: vars.x * 2, done: false };
+                      case 2:
+                        step += 1;
+                        vars.y = args[0];
+                        return { value: vars.y, done: true };
+                      case 3:
+                        return { value: undefined, done: true };
+                    }
+                  }
+                };
+              },
+            };
+            </pre></code>
+          </script>
+          </section>
+
+          <section data-markdown>
+          <script type="text/template">
+            ## Async Iterators
+
+            - When `next` returns a promise
+
+            ```javascript
+            const foo = {
+              [Symbol.asyncIterator]() {
+                let i = 0;
+                return {
+                  next() {
+                    return { value: Proise.resolve(i++), done: false, }
+                  }
+                },
+              },
+            };
+
+            for await (const i of foo) {
+              console.log(i);
+              if (i > 10) break;
+            }
+            ```
+          </script>
+          </section>
+
+          <section data-markdown>
+          <script type="text/template">
+            ## Async Generators
+
+            - Syntax sugar
+
+            ```javascript
+            async function* foo() {
+              let i = 0;
+              while (true) {
+                yield i++;
+              }
+            }
+            ```
+          </script>
+          </section>
+
+          <section>
+            
+          </section>
+        </section>
+
+        <section>
+          ## Further reading
+
+          - Erik Meijer
+            - [What does it mean to be Reactive?](https://www.youtube.com/watch?v=sTSQlYX5DU0)
+            - [Duality and the End of Reactive](https://channel9.msdn.com/Events/Lang-NEXT/Lang-NEXT-2014/Keynote-Duality)
+            - 
+        </section>
+	  </div>
+	</div>
+
+	<script src="dist/reveal.js"></script>
+	<script src="plugin/notes/notes.js"></script>
+	<script src="plugin/markdown/markdown.js"></script>
+	<script src="plugin/highlight/highlight.js"></script>
+	<script>
+	  // More info about initialization & config:
+	  // - https://revealjs.com/initialization/
+	  // - https://revealjs.com/config/
+	  Reveal.initialize({
+      hash: true,
+      plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
+	  });
+	</script>
+  </body>
+</html>
