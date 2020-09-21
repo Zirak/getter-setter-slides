@@ -36,6 +36,28 @@
           1. Observable
           </script>
         </section>
+
+        <section>
+          <pre><code class="javascript">
+            const config = {
+              apiPort: 4444,
+            };
+
+            // vs
+
+            function getConfig() {
+              return { apiPort: 4444 };
+            }
+          </code></pre>
+
+          <ul>
+            <li>Why have functions at all?
+            <li>Why can't we just put use values?
+
+            <li class="fragment">When the value is <em>somewhere else</em>
+            <li class="fragment">...and we need to ask for it</li>
+        </section>
+
         <section>
           <section>
             <h2>Getter</h2>
@@ -45,22 +67,14 @@
             <p>setter <em>(n.)</em> &mdash; A function which receives a value</p>
             <code>T => ()</code>
           </section>
-          <section>
-            <h2>Getter / Setter</h2>
-            <ul>
-              <li>Why have functions at all?
-              <li>Why can't we just put values in variables?
-              <li>Why can't we just use assignments everywhere?
-              <li class="fragment">When the value is <em>somewhere else</em>
-          </section>
+
           <section data-markdown>
             <script type="text/template">
               ## Getter examples
 
-              - `document.body`
-              - `document`
+              - `Date.now()`
               - `require(...)`
-              - `Date.now(...)`
+              - `document.getElementById`
               - User input
               - Network, fs, ROM, ...
             </script>
@@ -132,17 +146,14 @@
           <section data-markdown>
             <script type="text/template">
             ## Promises of a Promise
-            - An explicit contract
-            - Either resolved/rejected, never both
-            - Never more than once
-            - Always async
-            ```javascript
-            console.log('before then');
-            something.then((x) => {
-                console.log('inside', x);
-            });
-            console.log('after then');
-            ```
+            - Not a social construct
+            - A data structure
+
+            Note:
+            The contract is:
+            - Either resolved/rejected
+            - Never called more than once
+            - Always async (zalgo)
             </script>
           </section>
           <section data-markdown="">
@@ -170,72 +181,6 @@
                 (T => (), S => ()) => ()
             </code>
           </section>
-
-          <section data-markdown>
-          <script type="text/template">
-            ### Aside: (Somewhat) Aggressively Async
-
-            <pre><code class="javascript" data-trim data-line-numbers="1-15|1-7,9,11,15|9|12-14|13">
-            console.log('before constructor');
-            const p = new Promise((resolve) => {
-              console.log('before resolve');
-              resolve(4);
-              console.log('after resolve');
-            });
-            console.log('after constructor');
-            
-            p.then(console.log);
-
-            setTimeout(() => {
-              console.log('before then');
-              p.then(() => console.log('inside then'));
-              console.log('after then');
-            }, 10);
-            </code></pre>
-          </script>
-          </section>
-
-          <section data-markdown>
-          <script type="text/template">
-            ## Aside: Other data structures
-            - Promises are not the only setter-of-setters
-            - Other data structures exist
-            - Promises model a _value_, not an _action_
-          </script>
-          </section>
-          <section data-markdown>
-          <script type="text/template">
-            ## [Tasks](http://kriskowal.github.io/gtor/docs/task)
-            - Tasks model actions
-              - Cancellable
-              - Unicast
-              - _Lazy_
-
-            ```js
-            const t = new Task((resolve, reject) => {
-              console.log('inside resolver');
-              resolve(4);
-            });
-
-            setTimeout(() => {
-              t.then(console.log);
-            }, 4000);
-            ```
-          </script>
-          </section>
-        </section>
-
-        <section>
-          <section data-markdown>
-          <script type="text/template">
-            ## Setter-of-setter properties
-            (so far!)
-            * Lazy / Eager
-            * Sync / Async
-            * Unicast / Multicast
-            * ...both for consumer and producer
-          </script>
-          </section>
         </section>
 
         <section>
@@ -252,23 +197,27 @@
 
           <section>
             <div class="r-stack">
-              <pre class="fade-out"><code class="javascript" data-trim>
-              // Never use this function
-              function prng() {
-                let seed = 0xdeadcafe;
-                return () => {
-                  seed *= 1700;
-                  seed %= 0x7fff;
-                  return seed;
-                };
-              }
+              <pre class="fade-out"><code class="javascript">
+                // Never use this function
+                function prng() {
+                  let seed = 0xdeadcafe;
+                  return () => {
+                    seed *= 1700;
+                    seed %= 0x7fff;
+                    return seed;
+                  };
+                }
+  
+                const rand = prng();
+                rand(); // 2563
+                rand(); // 31856
 
-              const rand = prng();
-              rand(); // 2563
-              rand(); // 31856
+                // prng() => (
+                //   () => number
+                // )
               </code></pre>
 
-              <pre class="fragment"><code class="javascript" data-trim>
+              <pre class="fragment"><code class="javascript">
                 // Never use this function
                 function prng() {
                   let seed = 0xdeadcafe;
@@ -284,9 +233,12 @@
                 const rand = prng();
                 rand.next(); // 2563
                 rand.next(); // 31856
+
+                // prng() => {
+                //     next() => number
+                // }
               </code></pre>
             </div>
-          </script>
           </section>
 
           <section data-markdown>
@@ -304,7 +256,7 @@
           </section>
 
           <section>
-            <pre class="fragment"><code class="javascript" data-trim>
+            <pre><code class="javascript" data-trim>
               // Never use this function
               function prng() {
                 let seed = 0xdeadcafe;
@@ -351,7 +303,8 @@
 
           <section>
             <h2>Iterable</h2>
-            <p>An object with a <code>Symbol.iterator</code> key, a function which returns an iterator</p>
+            <p>An object with a <code>Symbol.iterator</code> key,</p>
+            <p>a function which returns an iterator</p>
           </section>
 
           <section data-markdown>
@@ -476,12 +429,166 @@
         </section>
 
         <section>
+          <section data-markdown>
+          <script type="text/template">
+            ## Getter/setter hierarchy
+
+            - Value: Setter <-> Getter
+            - Async value: Resolver <-> Promise
+            - Collection: Generator <-> Iterable
+
+            - XXX nah
+            <table className="col">
+              <tr>
+                <td>Value</td>
+                <td>Promise</td>
+              <tr>
+                <td>Collection</td>
+            </table>
+          </script>
+          </section>
+
+          <section data-markdown>
+          <script type="text/template">
+            # Properties
+          </script>
+          </section>
+
+          <section>
+            <h3>Lazy vs. Eager</h3>
+
+            <pre><code class="javascript">
+              const config = {
+                apiPort: 4444,
+              };
+  
+              // vs
+  
+              function getConfig() {
+                return { apiPort: 4444 };
+              }
+            </code></pre>
+
+            <ul>
+              <li>Values are <em>lazy</em>: Computed now</li>
+              <li>Functions are <em>eager</em>: Computed when called</li>
+            </ul>
+
+            <aside class="notes">
+              Contrast to an IIFE: A function called now.
+            </aside>
+          </section>
+
+          <section>
+            <h3>Promies: Lazy vs. Eager</h3>
+
+            <pre><code class="javascript">
+              const p = new Promise((resolve) => {
+                console.log('ketchup');
+                resolve(4);
+              });
+              console.log('mayo');
+            </code></pre>
+
+            <ul class="fragment">
+              <li>The resolver is called immediately</li>
+              <li>They are computed <em>now</em></li>
+              <li>Promises are deferred <em>values</em></li>
+            </ul>
+          </script>
+          </section>
+
+          <style>
+            .reveal table.col th:first-child {
+              border-right: 1px solid;
+            }
+            .reveal table.col tbody th, .reveal table.col tbody td {
+              border-bottom: 0;
+              padding: 0.6em 0.8em 0.6em 0.8em;
+            }
+          </style>
+
+          <section data-markdown>
+          <script type="text/template">
+            <table class="col">
+              <thead>
+                <th>
+                <th>Eager
+                <th>Lazy
+              </thead>
+              <tr>
+                <th>Spatial
+                <td>Value
+                <td>Function
+              <tr>
+                <th>Temporal
+                <td>Promise
+                <td class="fragment">Task
+            </table>
+          </script>
+          </section>
+
+          <section data-markdown>
+          <script type="text/template">
+            Tasks model future _actions_
+
+            ```js
+            const t = new Task((resolve, reject) => {
+              console.log('inside resolver');
+              resolve(4);
+            });
+
+            setTimeout(() => {
+              t.then((x) => {
+                console.log('such a lovely', x);
+              });
+            }, 4000);
+            ```
+          </script>
+          </section>
+
+          <section>
+            <table class="col">
+              <thead>
+                <th>
+                <th>Eager
+                <th>Lazy
+              </thead>
+              <tr>
+                <th>Singular
+                <td>Value
+                <td>Function
+              <tr>
+                <th>Plural
+                <td class="fragment">Array
+                <td class="fragment">Generator*
+            </table>
+          </section>
+
+          <section data-markdown>
+          <script type="text/template">
+            ## Push / Pull
+
+            - The getter hierarchy is _pull_
+              - Consumer controls when values are received
+            - The setter pyramid is _push_
+              - Producer controls when values are received
+          </script>
+          </section>
+        </section>
+
+        <section data-markdown>
+        <script type="text/template">
           ## Further reading
 
           - Erik Meijer
             - [What does it mean to be Reactive?](https://www.youtube.com/watch?v=sTSQlYX5DU0)
             - [Duality and the End of Reactive](https://channel9.msdn.com/Events/Lang-NEXT/Lang-NEXT-2014/Keynote-Duality)
-            - 
+          - Kris Kowal - [General Theory of Reactivity](https://github.com/kriskowal/gtor)
+          - André Staltz - [Getter / Setter Pyramid](https://staltz.com/javascript-getter-setter-pyramid.html)
+          - Ben Lesh - [Observable is just a function](https://medium.com/@benlesh/learning-observable-by-building-observable-d5da57405d87) (shameless pandering)
+          - Rich Hickey - [Value of Values](https://www.infoq.com/presentations/Value-Values/) (always a good watch)
+        </script>
         </section>
 	  </div>
 	</div>
@@ -496,6 +603,7 @@
 	  // - https://revealjs.com/config/
 	  Reveal.initialize({
       hash: true,
+      controlsTutorial: false,
       plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
 	  });
 	</script>
