@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-	<title>reveal.js</title>
+	<title>Zirak | The Getter/Setter Hierarchy</title>
 
 	<link rel="stylesheet" href="dist/reset.css">
 	<link rel="stylesheet" href="dist/reveal.css">
@@ -37,6 +37,36 @@
           </script>
         </section>
 
+        <section data-markdown>
+        <script type="text/template">
+          ## The Getter/Setter Hierarchy
+        </script>
+        </section>
+
+        <section>
+          <h3>whoami</h3>
+          <img src="images/awesome.png" width="256" height="256" style="border: 0; float: right; box-shadow: initial;" />
+          <ul>
+              <li>Zirak</li>
+              <li>I like JS</li>
+              <li><a href="https://zirak.me">https://zirak.me</a></li>
+              <p>&nbsp;</p>
+              <li>Did I forget to record my screen?</li>
+              <li>But enough about me</li>
+          </ul>
+        </section>
+
+        <section data-markdown>
+        <script type="text/template">
+          ## Getter/Setter Hierarchy
+
+          - Talk about the nature of values
+          - `4`
+          - Promise
+          - Observable?
+        </script>
+        </section>
+
         <section>
           <pre><code class="javascript">
             const config = {
@@ -54,17 +84,25 @@
             <li>Why have functions at all?
             <li>Why can't we just put use values?
 
+            <li class="fragment">When we <em>don't care</em> how something is done
             <li class="fragment">When the value is <em>somewhere else</em>
-            <li class="fragment">...and we need to ask for it</li>
+          </ul>
+
+          <aside class="notes">
+            <p>Functions create an API. They're created because of natural process/system/etc. boundaries</p>
+          </aside>
         </section>
 
         <section>
           <section>
             <h2>Getter</h2>
-            <p>getter <em>(n.)</em> &mdash; A function which returns a value</p>
+            <p>A function which returns a value</p>
             <code>() => T</code>
+
+            <p>&nbsp;</p>
+
             <h2>Setter</h2>
-            <p>setter <em>(n.)</em> &mdash; A function which receives a value</p>
+            <p>A function which receives a value</p>
             <code>T => ()</code>
           </section>
 
@@ -88,6 +126,28 @@
               - `readFile`, `socket.write`, ...
             </script>
           </section>
+
+          <section data-markdown>
+          <script type="text/template">
+            ## Value
+
+            ```js
+            function value() {
+              let x = 4;
+
+              return {
+                get() {
+                  return x;
+                },
+
+                set(y) {
+                  x = y;
+                }
+              }
+            }
+            ```
+          </script>
+          </section>
         </section>
 
         <section>
@@ -98,15 +158,13 @@
 
           <section data-markdown>
             <script type="text/template">
-            - Let's look at your average callback:
             ```javascript
-              function readConfig(cb) {
-                magicallyReadConfig(configPath, (config) => {
-                  config.apiPort ||= 4444; // Coming soon! 
-                  cb(config);
-                });
-              }
+            function readConfig(cb) {
+              const config = { apiPort: 4444 };
+              cb(config);
+            }
             ```
+
             ```
               readConfig(cb: Config => ()) => ()
             ```
@@ -128,7 +186,7 @@
                 if (err) {
                   cb(err);
                 } else {
-                  config.apiPort ||= 4444;
+                  config.apiPort ||= 4444; // coming soon!
                   cb(config);
                 }
               });
@@ -159,6 +217,7 @@
           <section data-markdown="">
             <script type="text/template">
               ## Resolver
+
               - The function passed to `Promise` constructor
               ```javascript
               const p = new Promise(resolver);
@@ -174,13 +233,35 @@
               - <!-- .element: class="fragment" --> The resolver is a <em>setter</em> of <em>two setters</em>
             </script>
           </section>
+
+          <section data-markdown>
+            <script type="text/template">
+              ## `then`able
+  
+              ```javascript
+              p.then((x) => {
+                console.log('such a lovely', x);
+              }, (err) => {
+                console.log('oh no!', err);
+              });
+              ```
+            </script>
+            </section>
+
           <section>
-            <h2>Promise</h2>
+            <h2>Resolver</h2>
             <p>Contract around a setter of two setters</p>
             <code data-trim>
-                (T => (), S => ()) => ()
+              resolver(T => (), S => ()) => ()
+            </code>
+
+            <h2>`then`able</h2>
+            <p>Contract around a setter of two setters</p>
+            <code data-tram>
+              then(T => (), S => ()) => lets-ignore-this
             </code>
           </section>
+
         </section>
 
         <section>
@@ -196,49 +277,24 @@
           </section>
 
           <section>
-            <div class="r-stack">
-              <pre class="fade-out"><code class="javascript">
-                // Never use this function
-                function prng() {
-                  let seed = 0xdeadcafe;
-                  return () => {
-                    seed *= 1700;
-                    seed %= 0x7fff;
-                    return seed;
-                  };
-                }
-  
-                const rand = prng();
-                rand(); // 2563
-                rand(); // 31856
+            <pre class="fade-out"><code class="javascript">              function iterate() {
+                const arr = ['foo', 'bar'];
+                let i = 0;
 
-                // prng() => (
-                //   () => number
-                // )
-              </code></pre>
+                return () => {
+                  const ret = arr[i];
+                  i += 1;
+                  return ret;
+                };
+              }
 
-              <pre class="fragment"><code class="javascript">
-                // Never use this function
-                function prng() {
-                  let seed = 0xdeadcafe;
-                  return {
-                    next() {
-                      seed *= 1700;
-                      seed %= 0x7fff;
-                      return seed;
-                    },
-                  };
-                }
-  
-                const rand = prng();
-                rand.next(); // 2563
-                rand.next(); // 31856
+              const getItems = foo();
+              getItems(); // 'foo'
+              getItems(); // 'bar'</code></pre>
 
-                // prng() => {
-                //     next() => number
-                // }
-              </code></pre>
-            </div>
+            <pre><code>              iterate() => (
+                () => string
+              )</code></pre>
           </section>
 
           <section data-markdown>
@@ -258,14 +314,21 @@
           <section>
             <pre><code class="javascript" data-trim>
               // Never use this function
-              function prng() {
-                let seed = 0xdeadcafe;
+              function iterate() {
+                const arr = ['foo', 'bar'];
+                let i = 0;
+
                 return {
                   next() {
-                    seed *= 1700;
-                    seed %= 0x7fff;
+                    if (i >= arr.length) {
+                      return { done: true };
+                    }
+
+                    const ret = arr[i];
+                    i += 1;
+
                     return {
-                      value: seed,
+                      value: ret,
                       done: false,
                     };
                   },
@@ -379,53 +442,6 @@
             </pre></code>
           </script>
           </section>
-
-          <section data-markdown>
-          <script type="text/template">
-            ## Async Iterators
-
-            - When `next` returns a promise
-
-            ```javascript
-            const foo = {
-              [Symbol.asyncIterator]() {
-                let i = 0;
-                return {
-                  next() {
-                    return { value: Proise.resolve(i++), done: false, }
-                  }
-                },
-              },
-            };
-
-            for await (const i of foo) {
-              console.log(i);
-              if (i > 10) break;
-            }
-            ```
-          </script>
-          </section>
-
-          <section data-markdown>
-          <script type="text/template">
-            ## Async Generators
-
-            - Syntax sugar
-
-            ```javascript
-            async function* foo() {
-              let i = 0;
-              while (true) {
-                yield i++;
-              }
-            }
-            ```
-          </script>
-          </section>
-
-          <section>
-            
-          </section>
         </section>
 
         <section>
@@ -435,16 +451,7 @@
 
             - Value: Setter <-> Getter
             - Async value: Resolver <-> Promise
-            - Collection: Generator <-> Iterable
-
-            - XXX nah
-            <table className="col">
-              <tr>
-                <td>Value</td>
-                <td>Promise</td>
-              <tr>
-                <td>Collection</td>
-            </table>
+            - Collection: Generator <-> Iterator
           </script>
           </section>
 
@@ -470,8 +477,8 @@
             </code></pre>
 
             <ul>
-              <li>Values are <em>lazy</em>: Computed now</li>
-              <li>Functions are <em>eager</em>: Computed when called</li>
+              <li>Values are <em>eager</em>: Computed now</li>
+              <li>Functions are <em>lazy</em>: Computed when called</li>
             </ul>
 
             <aside class="notes">
@@ -480,7 +487,7 @@
           </section>
 
           <section>
-            <h3>Promies: Lazy vs. Eager</h3>
+            <h3>Promises: Lazy vs. Eager</h3>
 
             <pre><code class="javascript">
               const p = new Promise((resolve) => {
@@ -579,16 +586,40 @@
 
         <section data-markdown>
         <script type="text/template">
+          <table class="col">
+            <thead>
+              <th>
+              <th>Singular
+              <th>Plural
+            </thead>
+            <tr>
+              <th>Spatial
+              <td>Value
+              <td>Collection
+            <tr>
+              <th>Temporal
+              <td>Promise
+              <td class="fragment">Stream
+          </table>
+        </script>
+        </section>
+
+        <section data-markdown>
+        <script type="text/template">
           ## Further reading
 
+          - Kris Kowal - [General Theory of Reactivity](https://github.com/kriskowal/gtor)
+          - André Staltz - [Getter / Setter Pyramid](https://staltz.com/javascript-getter-setter-pyramid.html)
           - Erik Meijer
             - [What does it mean to be Reactive?](https://www.youtube.com/watch?v=sTSQlYX5DU0)
             - [Duality and the End of Reactive](https://channel9.msdn.com/Events/Lang-NEXT/Lang-NEXT-2014/Keynote-Duality)
-          - Kris Kowal - [General Theory of Reactivity](https://github.com/kriskowal/gtor)
-          - André Staltz - [Getter / Setter Pyramid](https://staltz.com/javascript-getter-setter-pyramid.html)
-          - Ben Lesh - [Observable is just a function](https://medium.com/@benlesh/learning-observable-by-building-observable-d5da57405d87) (shameless pandering)
-          - Rich Hickey - [Value of Values](https://www.infoq.com/presentations/Value-Values/) (always a good watch)
+          - Ben Lesh (shameless pandering) - [Observable is just a function](https://medium.com/@benlesh/learning-observable-by-building-observable-d5da57405d87)
         </script>
+        </section>
+
+        <section>
+          <h1>Thank You
+          <h3>Questions?
         </section>
 	  </div>
 	</div>
