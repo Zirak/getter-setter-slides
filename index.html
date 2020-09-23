@@ -1,46 +1,32 @@
 <!doctype html>
 <html>
   <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-	<title>Zirak | The Getter/Setter Hierarchy</title>
+    <title>Zirak | The Getter/Setter Hierarchy</title>
 
-	<link rel="stylesheet" href="dist/reset.css">
-	<link rel="stylesheet" href="dist/reveal.css">
-	<link rel="stylesheet" href="dist/theme/simple.css" id="theme">
+    <link rel="stylesheet" href="dist/reset.css">
+    <link rel="stylesheet" href="dist/reveal.css">
+    <link rel="stylesheet" href="dist/theme/simple.css" id="theme">
 
-	<link rel="stylesheet" href="plugin/highlight/docco.css" id="highlight-theme">
+    <link rel="stylesheet" href="plugin/highlight/docco.css" id="highlight-theme">
+
+    <style>
+      .reveal table.col th:first-child {
+          border-right: 1px solid;
+      }
+      .reveal table.col tbody th, .reveal table.col tbody td {
+          border-bottom: 0;
+          padding: 0.6em 0.8em 0.6em 0.8em;
+      }
+    </style>
   </head>
   <body>
-	<div class="reveal">
-	  <div class="slides">
-        <section data-markdown>
-          <script type="text/template">
-          ## Overview
-          1. Functions are special values
-          1. [x] Getter / Setter are functions with specific signatures
-          1. [x] Setter-setters (callbacks)
-              1. [x] Nodebacks
-              1. [ ] Convention vs. language features (`cb(err)` vs. `throw err` etc.)
-          1. [x] Promises (setter-setters with signature)
-              1. [?] Illustrate values flow from setter->getter
-              1. [x] Alternative: Task (lazy, cancellable, unicast)
-          1. [ ] Getter-getters (brief overview)
-          1. Iterators (getter-getters with contract)
-              1. Contract in js
-              2. Generators
-              3. 2c coroutine implementation in js
-          1. Async iterable (iterator with async `next`)
-          1. Stream
-          1. Observable
-          </script>
-        </section>
-
-        <section data-markdown>
-        <script type="text/template">
-          ## The Getter/Setter Hierarchy
-        </script>
+    <div class="reveal">
+      <div class="slides">
+        <section>
+          <h2>The Getter/Setter Hierarchy</h2>
         </section>
 
         <section>
@@ -237,7 +223,7 @@
           <section data-markdown>
             <script type="text/template">
               ## `then`able
-  
+
               ```javascript
               p.then((x) => {
                 console.log('such a lovely', x);
@@ -255,10 +241,10 @@
               resolver(T => (), S => ()) => ()
             </code>
 
-            <h2>`then`able</h2>
+            <h2><code>then</code>able</h2>
             <p>Contract around a setter of two setters</p>
             <code data-tram>
-              then(T => (), S => ()) => lets-ignore-this
+              then(T => (), S => ()) => eeehhh
             </code>
           </section>
 
@@ -272,12 +258,7 @@
           </section>
 
           <section>
-            - No catchy name like callbacks
-            - Used when encapsulating local state
-          </section>
-
-          <section>
-            <pre class="fade-out"><code class="javascript">              function iterate() {
+            <pre><code class="javascript">              function iterate() {
                 const arr = ['foo', 'bar'];
                 let i = 0;
 
@@ -288,9 +269,9 @@
                 };
               }
 
-              const getItems = foo();
-              getItems(); // 'foo'
-              getItems(); // 'bar'</code></pre>
+              const getItem = foo();
+              getItem(); // 'foo'
+              getItem(); // 'bar'</code></pre>
 
             <pre><code>              iterate() => (
                 () => string
@@ -313,7 +294,6 @@
 
           <section>
             <pre><code class="javascript" data-trim>
-              // Never use this function
               function iterate() {
                 const arr = ['foo', 'bar'];
                 let i = 0;
@@ -335,45 +315,46 @@
                 };
               }
 
-              const rand = prng();
-              rand.next(); // { value: 2563, done: false }
-              rand.next(); // { value: 31856, done: false }
+              const items = iterate();
+              items.next(); // { value: 'foo', done: false }
+              items.next(); // { value: 'bar', done: false }
+              items.next(); // { done: true }
             </code></pre>
           </section>
 
           <section data-markdown>
-            <script type="text/template">
-              ## Generators
+          <script type="text/template">
+            ## Generators
 
-              Syntax sugar for creating iterators
+            Syntax sugar for supplying values for an iterator
 
-              ```javascript
-              function* prng() {
-                let seed = 0xdeadcafe;
-                while (true) {
-                  seed *= 1700;
-                  seed %= 0x7fff;
-                  yield seed;
-                }
+            ```javascript
+            function* iterate() {
+              const array = ['foo', 'bar'];
+              for (const val of array) {
+                yield val;
               }
+            }
 
-              const rand = prng();
-              rand.next(); // { value: 2563, done: false }
-              rand.next(); // { value: 31856, done: false }
-              ```
-            </script>
-            </section>
+            const items = iterate();
+            items.next(); // { value: 'foo', done: false }
+            items.next(); // { value: 'bar', done: false }
+            items.next(); // { value: undefined, done: true }
+            ```
+          </script>
+          </section>
 
-          <section>
-            <h2>Iterable</h2>
-            <p>An object with a <code>Symbol.iterator</code> key,</p>
-            <p>a function which returns an iterator</p>
+          <section data-markdown>
+          <script type="text/template">
+            ### Zirak if you reach me go to the slide on the right
+
+            Things below are for fun purposes to the nice people at home looking for some more info
+          </script>
           </section>
 
           <section data-markdown>
           <script type="text/template">
             ## Aside: Coroutines
-
             - You can send values back _into_ an iterator
             - Models a [coroutine]((http://www.dabeaz.com/coroutines/Coroutines.pdf)) / state machine
 
@@ -393,7 +374,7 @@
           <section data-markdown>
             <script type="text/template">
               ## Aside: throw / return
-  
+
               - `gen.throw()` causes an exception
               - `gen.return()` forces an early return
             </script>
@@ -450,7 +431,7 @@
             ## Getter/setter hierarchy
 
             - Value: Setter <-> Getter
-            - Async value: Resolver <-> Promise
+            - Deferred: Resolver <-> Thenable
             - Collection: Generator <-> Iterator
           </script>
           </section>
@@ -468,9 +449,9 @@
               const config = {
                 apiPort: 4444,
               };
-  
+
               // vs
-  
+
               function getConfig() {
                 return { apiPort: 4444 };
               }
@@ -504,16 +485,6 @@
             </ul>
           </script>
           </section>
-
-          <style>
-            .reveal table.col th:first-child {
-              border-right: 1px solid;
-            }
-            .reveal table.col tbody th, .reveal table.col tbody td {
-              border-bottom: 0;
-              padding: 0.6em 0.8em 0.6em 0.8em;
-            }
-          </style>
 
           <section data-markdown>
           <script type="text/template">
@@ -617,26 +588,32 @@
         </script>
         </section>
 
+        <section data-markdown>
+        <script type="text/template">
+          ## Insert plug about the company I work for
+        </script>
+        </section>
+
         <section>
           <h1>Thank You
           <h3>Questions?
         </section>
-	  </div>
-	</div>
+      </div>
+    </div>
 
-	<script src="dist/reveal.js"></script>
-	<script src="plugin/notes/notes.js"></script>
-	<script src="plugin/markdown/markdown.js"></script>
-	<script src="plugin/highlight/highlight.js"></script>
-	<script>
-	  // More info about initialization & config:
-	  // - https://revealjs.com/initialization/
-	  // - https://revealjs.com/config/
-	  Reveal.initialize({
-      hash: true,
-      controlsTutorial: false,
-      plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
-	  });
-	</script>
+    <script src="dist/reveal.js"></script>
+    <script src="plugin/notes/notes.js"></script>
+    <script src="plugin/markdown/markdown.js"></script>
+    <script src="plugin/highlight/highlight.js"></script>
+    <script>
+      // More info about initialization & config:
+      // - https://revealjs.com/initialization/
+      // - https://revealjs.com/config/
+      Reveal.initialize({
+          hash: true,
+          controlsTutorial: false,
+          plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
+      });
+    </script>
   </body>
 </html>
