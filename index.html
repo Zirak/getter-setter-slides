@@ -68,7 +68,7 @@
 
           <ul>
             <li>Why have functions at all?
-            <li>Why can't we just put use values?
+            <li>Why can't we just use values?
 
             <li class="fragment">When we <em>don't care</em> how something is done
             <li class="fragment">When the value is <em>somewhere else</em>
@@ -98,9 +98,8 @@
 
               - `Date.now()`
               - `require(...)`
-              - `document.getElementById`
-              - User input
               - Network, fs, ROM, ...
+              - User input
             </script>
           </section>
           <section data-markdown>
@@ -109,7 +108,7 @@
 
               - Changing the world!
               - `console.log`
-              - `readFile`, `socket.write`, ...
+              - `writeFile`, `socket.write`, ...
             </script>
           </section>
 
@@ -128,8 +127,8 @@
 
                 set(y) {
                   x = y;
-                }
-              }
+                },
+              };
             }
             ```
           </script>
@@ -173,7 +172,7 @@
                   cb(err);
                 } else {
                   config.apiPort ||= 4444; // coming soon!
-                  cb(config);
+                  cb(null, config);
                 }
               });
             }
@@ -314,7 +313,8 @@
                   },
                 };
               }
-
+            </code></pre>
+            <pre><code class="javascript" data-trim>
               const items = iterate();
               items.next(); // { value: 'foo', done: false }
               items.next(); // { value: 'bar', done: false }
