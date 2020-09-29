@@ -13,6 +13,15 @@
     <link rel="stylesheet" href="plugin/highlight/docco.css" id="highlight-theme">
 
     <style>
+      .reveal pre {
+        font-size: 0.75em;
+        width: unset;
+
+      }
+      .reveal pre code {
+        max-height: unset;
+      }
+
       .reveal table.col th:first-child {
           border-right: 1px solid;
       }
@@ -55,15 +64,15 @@
 
         <section>
           <pre><code class="javascript">
-            const config = {
-              apiPort: 4444,
-            };
+          const config = {
+            apiPort: 4444,
+          };
 
-            // vs
+          // vs
 
-            function getConfig() {
-              return { apiPort: 4444 };
-            }
+          function getConfig() {
+            return { apiPort: 4444 };
+          }
           </code></pre>
 
           <ul>
@@ -108,13 +117,14 @@
 
               - Changing the world!
               - `console.log`
+              - `element.setAttribute`
               - `writeFile`, `socket.write`, ...
             </script>
           </section>
 
           <section data-markdown>
           <script type="text/template">
-            ## Value
+            ### Value
 
             ```js
             function value() {
@@ -151,7 +161,7 @@
             ```
 
             ```
-              readConfig(cb: Config => ()) => ()
+            readConfig(cb: Config => ()) => ()
             ```
 
             - <!-- .element: class="fragment" --> <code>cb</code> is a setter: A function which receives a value
@@ -159,6 +169,19 @@
             - <!-- .element: class="fragment" --> ...but a setter of <em>setters</em>: A setter which receives another setter
           </script>
           </section>
+
+          <section>
+            <pre><code class="javascript" data-trim>
+            let x = 0;
+            function cb() {
+              x += 1;
+            }
+            </code></pre>
+
+            <pre class="fragment"><code>fs.readFile(path, cb)</code></pre>
+            <pre class="fragment"><code>element.addEventListener(event, cb)</code></pre>
+          </section>
+
           <section data-markdown>
             <script type="text/template">
             ## nodebacks
@@ -230,21 +253,21 @@
                 console.log('oh no!', err);
               });
               ```
+
+              ```
+              then(T => (), S => ()) => eeehhh
+              ```
             </script>
             </section>
 
-          <section>
-            <h2>Resolver</h2>
-            <p>Contract around a setter of two setters</p>
-            <code data-trim>
-              resolver(T => (), S => ()) => ()
-            </code>
+          <section data-markdown>
+          <script type="text/template">
+            ## Deferred
 
-            <h2><code>then</code>able</h2>
-            <p>Contract around a setter of two setters</p>
-            <code data-tram>
-              then(T => (), S => ()) => eeehhh
-            </code>
+            - A value in the future
+            - Produced by the `resolver`
+            - Consumed via the `then`able
+          </script>
           </section>
 
         </section>
@@ -257,7 +280,8 @@
           </section>
 
           <section>
-            <pre><code class="javascript">              function iterate() {
+            <pre><code class="javascript" data-trim data-line-numbers="|2-3|5,9|6-7|8|12-14|">
+              function iterate() {
                 const arr = ['foo', 'bar'];
                 let i = 0;
 
@@ -268,13 +292,11 @@
                 };
               }
 
-              const getItem = foo();
+              const getItem = iterate();
               getItem(); // 'foo'
               getItem(); // 'bar'</code></pre>
 
-            <pre><code>              iterate() => (
-                () => string
-              )</code></pre>
+            <pre><code>iterate() => (() => string)</code></pre>
           </section>
 
           <section data-markdown>
@@ -292,11 +314,10 @@
           </section>
 
           <section>
-            <pre><code class="javascript" data-trim>
+            <pre><code class="javascript" data-trim data-line-numbers="1-18|2-3|4,5,16,17|6-8|10-11|12-15">
               function iterate() {
                 const arr = ['foo', 'bar'];
                 let i = 0;
-
                 return {
                   next() {
                     if (i >= arr.length) {
@@ -305,7 +326,6 @@
 
                     const ret = arr[i];
                     i += 1;
-
                     return {
                       value: ret,
                       done: false,
@@ -314,6 +334,9 @@
                 };
               }
             </code></pre>
+          </section>
+
+          <section>
             <pre><code class="javascript" data-trim>
               const items = iterate();
               items.next(); // { value: 'foo', done: false }
@@ -470,7 +493,7 @@
           <section>
             <h3>Promises: Lazy vs. Eager</h3>
 
-            <pre><code class="javascript">
+            <pre><code class="javascript" data-trim>
               const p = new Promise((resolve) => {
                 console.log('ketchup');
                 resolve(4);
@@ -480,8 +503,7 @@
 
             <ul class="fragment">
               <li>The resolver is called immediately</li>
-              <li>They are computed <em>now</em></li>
-              <li>Promises are deferred <em>values</em></li>
+              <li>Promises are <em>values</em> in the future</li>
             </ul>
           </script>
           </section>
@@ -506,23 +528,20 @@
           </script>
           </section>
 
-          <section data-markdown>
-          <script type="text/template">
-            Tasks model future _actions_
-
-            ```js
-            const t = new Task((resolve, reject) => {
-              console.log('inside resolver');
-              resolve(4);
-            });
-
-            setTimeout(() => {
+          <section>
+            <p>Tasks model future <em>actions</em></p>
+            <pre><code class="javascript" data-trim>
+              const t = new Task((resolve, reject) => {
+                console.log('ketchup');
+                resolve(4);
+              });
+              console.log('mayo');
+            </code></pre>
+            <pre class="fragment"><code class="javascript" data-trim>
               t.then((x) => {
                 console.log('such a lovely', x);
               });
-            }, 4000);
-            ```
-          </script>
+            </code></pre>
           </section>
 
           <section>
@@ -580,7 +599,9 @@
           ## Further reading
 
           - Kris Kowal - [General Theory of Reactivity](https://github.com/kriskowal/gtor)
-          - André Staltz - [Getter / Setter Pyramid](https://staltz.com/javascript-getter-setter-pyramid.html)
+          - André Staltz
+            - [Getter / setter pyramid](https://staltz.com/javascript-getter-setter-pyramid.html)
+            - [Why we need callbacks](https://staltz.com/why-we-need-callbags.html)
           - Erik Meijer
             - [What does it mean to be Reactive?](https://www.youtube.com/watch?v=sTSQlYX5DU0)
             - [Duality and the End of Reactive](https://channel9.msdn.com/Events/Lang-NEXT/Lang-NEXT-2014/Keynote-Duality)
@@ -590,7 +611,7 @@
 
         <section data-markdown>
         <script type="text/template">
-          ## Insert plug about the company I work for
+          <img src="images/company.png" alt="Logo of my company, come with with us!" />
         </script>
         </section>
 
@@ -612,6 +633,7 @@
       Reveal.initialize({
           hash: true,
           controlsTutorial: false,
+          mouseWheel: true,
           plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
       });
     </script>
